@@ -1,0 +1,49 @@
+import threading
+
+# read input text document from file
+with open('input.txt', 'r') as file:
+    input_text = file.read()
+
+# split input text into chunks of equal size
+chunk_size = len(input_text) // 4
+chunks = [input_text[i:i+chunk_size] for i in range(0, len(input_text), chunk_size)]
+
+# define map function
+def map_func(chunk):
+    word_counts = {}
+    for word in chunk.split():
+        if word not in word_counts:
+            word_counts[word] = 0
+        word_counts[word] += 1
+    return word_counts.items()
+
+# define reduce function
+def reduce_func(word_counts):
+    word_count = {}
+    for word, count in word_counts:
+        if word not in word_count:
+            word_count[word] = 0
+        word_count[word] += count
+    return word_count
+
+# create threads for each chunk of data and run map function
+threads = []
+for chunk in chunks:
+    thread = threading.Thread(target=map_func, args=(chunk,))
+    thread.start()
+    threads.append(thread)
+
+# wait for threads to finish and combine results
+word_counts = {}
+for thread in threads:
+    for word, count in thread.join():
+        if word not in word_counts:
+            word_counts[word] = 0
+        word_counts[word] += count
+
+# run reduce function to get final word counts
+final_word_counts = reduce_func(word_counts.items())
+
+# print final word counts
+for word, count in final_word_counts.items():
+    print(f"{word}: {count}")
